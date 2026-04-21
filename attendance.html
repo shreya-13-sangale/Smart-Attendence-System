@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mark Attendance - Smart Attendance</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>📋 Smart Attendance</h2>
+        <p id="admin-name">Admin</p>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-link">🏠 Dashboard</a>
+        <a href="attendance.html" class="nav-link active">✅ Mark Attendance</a>
+        <a href="report.html" class="nav-link">📊 Reports</a>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn-danger" style="width:100%" onclick="logout()">Logout</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-header">
+        <h1>Mark Attendance</h1>
+        <p id="today-label"></p>
+      </div>
+
+      <div id="success-alert" class="alert alert-success hidden">✅ Attendance saved successfully!</div>
+
+      <div class="table-card">
+        <div class="table-toolbar">
+          <h3>Students</h3>
+          <div style="display:flex;gap:0.5rem">
+            <button class="btn-secondary" onclick="markAll('Present')">All Present</button>
+            <button class="btn-secondary" onclick="markAll('Absent')">All Absent</button>
+            <button class="btn-success" onclick="submitAttendance()">Submit</button>
+          </div>
+        </div>
+        <table class="attendance-table">
+          <thead>
+            <tr>
+              <th>Roll No</th>
+              <th>Name</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="attendance-tbody"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    if (!localStorage.getItem('loggedIn')) window.location.href = 'index.html';
+    document.getElementById('admin-name').textContent = localStorage.getItem('username') || 'Admin';
+
+    const today = new Date();
+    document.getElementById('today-label').textContent = today.toDateString();
+
+    // Load students dynamically from localStorage (same source as dashboard)
+    let students = JSON.parse(localStorage.getItem('students_list') || 'null');
+    if (!students) {
+      students = [
+        { id: 1, roll: 'R001', name: 'Aarav Sharma',  email: 'aarav@email.com',  cls: 'CS-A' },
+        { id: 2, roll: 'R002', name: 'Priya Patel',   email: 'priya@email.com',  cls: 'CS-A' },
+        { id: 3, roll: 'R003', name: 'Rohan Mehta',   email: 'rohan@email.com',  cls: 'CS-A' },
+        { id: 4, roll: 'R004', name: 'Sneha Reddy',   email: 'sneha@email.com',  cls: 'CS-A' },
+        { id: 5, roll: 'R005', name: 'Karan Singh',   email: 'karan@email.com',  cls: 'CS-A' },
+      ];
+      localStorage.setItem('students_list', JSON.stringify(students));
+    }
+
+    const saved = JSON.parse(localStorage.getItem('attendance_' + today.toDateString()) || '{}');
+
+    const tbody = document.getElementById('attendance-tbody');
+    tbody.innerHTML = students.map(s => {
+      const cur = saved[s.id] || 'Present';
+      return `
+      <tr>
+        <td>${s.roll}</td>
+        <td>${s.name}</td>
+        <td>
+          <div class="status-radio">
+            <input type="radio" name="status_${s.id}" id="p_${s.id}" value="Present" ${cur==='Present'?'checked':''}>
+            <label for="p_${s.id}" class="present">Present</label>
+            <input type="radio" name="status_${s.id}" id="a_${s.id}" value="Absent" ${cur==='Absent'?'checked':''}>
+            <label for="a_${s.id}" class="absent">Absent</label>
+            <input type="radio" name="status_${s.id}" id="l_${s.id}" value="Late" ${cur==='Late'?'checked':''}>
+            <label for="l_${s.id}" class="late">Late</label>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    function markAll(status) {
+      students.forEach(s => {
+        document.querySelector(`input[name="status_${s.id}"][value="${status}"]`).checked = true;
+      });
+    }
+
+    function submitAttendance() {
+      const result = {};
+      students.forEach(s => {
+        const selected = document.querySelector(`input[name="status_${s.id}"]:checked`);
+        result[s.id] = selected ? selected.value : 'Absent';
+      });
+      localStorage.setItem('attendance_' + today.toDateString(), JSON.stringify(result));
+      const alert = document.getElementById('success-alert');
+      alert.classList.remove('hidden');
+      setTimeout(() => alert.classList.add('hidden'), 3000);
+    }
+
+    function logout() {
+      localStorage.removeItem('loggedIn');
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>

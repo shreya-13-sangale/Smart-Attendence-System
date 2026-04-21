@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Attendance System - Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-page">
+  <div class="login-card">
+    <div class="logo">
+      <h1>📋 Smart Attendance System</h1>
+      <p>Sign in to manage attendance</p>
+    </div>
+
+    <div id="alert" class="alert alert-error hidden">Invalid username or password.</div>
+
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="username" placeholder="Enter username" value="admin">
+      
+    </div>
+    <div class="form-group">
+      <label>Password</label> 
+      <input type="password" id="password" placeholder="Enter password" value="admin123">
+      
+    </div>
+    <button class="btn-primary" onclick="login()">Login</button>
+  </div>
+
+  <script>
+    function login() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const alert = document.getElementById('alert');
+
+      if (username === 'admin' && password === 'admin123') {
+        localStorage.setItem('loggedIn', 'true');
+        localStorage.setItem('username', username);
+        window.location.href = 'dashboard.html';
+      } else {
+        alert.classList.remove('hidden');
+        setTimeout(() => alert.classList.add('hidden'), 3000);
+      }
+    }
+
+    document.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') login();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - Smart Attendance</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>📋 Smart Attendance</h2>
+        <p id="admin-name">Admin</p>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-link active">🏠 Dashboard</a>
+        <a href="attendance.html" class="nav-link">✅ Mark Attendance</a>
+        <a href="report.html" class="nav-link">📊 Reports</a>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn-danger" style="width:100%" onclick="logout()">Logout</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-header">
+        <h1>Dashboard</h1>
+        <p id="today-date"></p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="number" id="total-students">5</div>
+          <div class="label">Total Students</div>
+        </div>
+        <div class="stat-card green">
+          <div class="number" id="present-today">0</div>
+          <div class="label">Present Today</div>
+        </div>
+        <div class="stat-card red">
+          <div class="number" id="absent-today">0</div>
+          <div class="label">Absent Today</div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-toolbar">
+          <h3>Students List</h3>
+          <a href="attendance.html"><button class="btn-primary" style="width:auto;padding:0.5rem 1rem">Mark Today's Attendance</button></a>
+        </div>
+        <table class="attendance-table">
+          <thead>
+            <tr>
+              <th>Roll No</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Class</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="student-tbody">
+            <tr><td colspan="5" style="text-align:center;padding:2rem;color:#718096">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ADD NEW STUDENT FORM -->
+      <div class="table-card" style="margin-top:1.5rem">
+        <div class="table-toolbar">
+          <h3>➕ Add New Student</h3>
+        </div>
+        <div style="padding:1.2rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end">
+          <div style="flex:1;min-width:150px">
+            <label style="font-size:0.82rem;color:#4a5568;display:block;margin-bottom:0.3rem">Roll No</label>
+            <input type="text" id="new-roll" placeholder="e.g. R006" style="width:100%;padding:0.6rem 0.8rem;border:1.5px solid #e2e8f0;border-radius:8px;font-size:0.9rem">
+          </div>
+          <div style="flex:1;min-width:150px">
+            <label style="font-size:0.82rem;color:#4a5568;display:block;margin-bottom:0.3rem">Full Name</label>
+            <input type="text" id="new-name" placeholder="e.g. Ravi Kumar" style="width:100%;padding:0.6rem 0.8rem;border:1.5px solid #e2e8f0;border-radius:8px;font-size:0.9rem">
+          </div>
+          <div style="flex:1;min-width:150px">
+            <label style="font-size:0.82rem;color:#4a5568;display:block;margin-bottom:0.3rem">Email</label>
+            <input type="text" id="new-email" placeholder="e.g. ravi@email.com" style="width:100%;padding:0.6rem 0.8rem;border:1.5px solid #e2e8f0;border-radius:8px;font-size:0.9rem">
+          </div>
+          <div style="flex:1;min-width:150px">
+            <label style="font-size:0.82rem;color:#4a5568;display:block;margin-bottom:0.3rem">Class</label>
+            <input type="text" id="new-class" placeholder="e.g. CS-A" style="width:100%;padding:0.6rem 0.8rem;border:1.5px solid #e2e8f0;border-radius:8px;font-size:0.9rem">
+          </div>
+          <div>
+            <button class="btn-success" style="padding:0.65rem 1.5rem;font-size:0.95rem" onclick="addStudent()">Add Student</button>
+          </div>
+        </div>
+        <div id="add-alert" style="margin:0 1.2rem 1rem;padding:0.7rem 1rem;border-radius:8px;font-size:0.9rem;display:none"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    if (!localStorage.getItem('loggedIn')) window.location.href = 'index.html';
+
+    document.getElementById('admin-name').textContent = localStorage.getItem('username') || 'Admin';
+
+    const today = new Date();
+    document.getElementById('today-date').textContent = today.toDateString();
+
+    // Load students from localStorage or use default
+    let students = JSON.parse(localStorage.getItem('students_list') || 'null');
+    if (!students) {
+      students = [
+        { id: 1, roll: 'R001', name: 'Aarav Sharma',  email: 'aarav@email.com',  cls: 'CS-A' },
+        { id: 2, roll: 'R002', name: 'Priya Patel',   email: 'priya@email.com',  cls: 'CS-A' },
+        { id: 3, roll: 'R003', name: 'Rohan Mehta',   email: 'rohan@email.com',  cls: 'CS-A' },
+        { id: 4, roll: 'R004', name: 'Sneha Reddy',   email: 'sneha@email.com',  cls: 'CS-A' },
+        { id: 5, roll: 'R005', name: 'Karan Singh',   email: 'karan@email.com',  cls: 'CS-A' },
+      ];
+      localStorage.setItem('students_list', JSON.stringify(students));
+    }
+
+    function renderStudents() {
+      const tbody = document.getElementById('student-tbody');
+      tbody.innerHTML = students.map((s, index) => `
+        <tr>
+          <td>${s.roll}</td>
+          <td>${s.name}</td>
+          <td>${s.email}</td>
+          <td>${s.cls}</td>
+          <td>
+            <button onclick="deleteStudent(${index})" style="padding:0.3rem 0.8rem;background:#fed7d7;color:#9b2c2c;border:none;border-radius:6px;cursor:pointer;font-size:0.82rem">Delete</button>
+          </td>
+        </tr>`).join('');
+
+      document.getElementById('total-students').textContent = students.length;
+
+      const saved = JSON.parse(localStorage.getItem('attendance_' + today.toDateString()) || '{}');
+      const presentCount = Object.values(saved).filter(v => v === 'Present').length;
+      document.getElementById('present-today').textContent = presentCount;
+      document.getElementById('absent-today').textContent = students.length - presentCount;
+    }
+
+    function addStudent() {
+      const roll  = document.getElementById('new-roll').value.trim();
+      const name  = document.getElementById('new-name').value.trim();
+      const email = document.getElementById('new-email').value.trim();
+      const cls   = document.getElementById('new-class').value.trim() || 'CS-A';
+      const alert = document.getElementById('add-alert');
+
+      if (!roll || !name) {
+        alert.style.display = 'block';
+        alert.style.background = '#fed7d7';
+        alert.style.color = '#9b2c2c';
+        alert.textContent = '❌ Please enter Roll No and Name!';
+        setTimeout(() => alert.style.display = 'none', 3000);
+        return;
+      }
+
+      // Check duplicate roll number
+      const exists = students.find(s => s.roll === roll);
+      if (exists) {
+        alert.style.display = 'block';
+        alert.style.background = '#fed7d7';
+        alert.style.color = '#9b2c2c';
+        alert.textContent = '❌ Roll No already exists!';
+        setTimeout(() => alert.style.display = 'none', 3000);
+        return;
+      }
+
+      const newStudent = {
+        id: students.length + 1,
+        roll, name, email, cls
+      };
+
+      students.push(newStudent);
+      localStorage.setItem('students_list', JSON.stringify(students));
+      renderStudents();
+
+      // Clear inputs
+      document.getElementById('new-roll').value = '';
+      document.getElementById('new-name').value = '';
+      document.getElementById('new-email').value = '';
+      document.getElementById('new-class').value = '';
+
+      alert.style.display = 'block';
+      alert.style.background = '#c6f6d5';
+      alert.style.color = '#276749';
+      alert.textContent = '✅ Student added successfully!';
+      setTimeout(() => alert.style.display = 'none', 3000);
+    }
+
+    function deleteStudent(index) {
+      if (confirm('Are you sure you want to delete this student?')) {
+        students.splice(index, 1);
+        localStorage.setItem('students_list', JSON.stringify(students));
+        renderStudents();
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('loggedIn');
+      window.location.href = 'index.html';
+    }
+
+    renderStudents();
+  </script>
+</body>
+</html>

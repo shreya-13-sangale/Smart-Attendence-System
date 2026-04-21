@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reports - Smart Attendance</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>📋 Smart Attendance</h2>
+        <p id="admin-name">Admin</p>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-link">🏠 Dashboard</a>
+        <a href="attendance.html" class="nav-link">✅ Mark Attendance</a>
+        <a href="report.html" class="nav-link active">📊 Reports</a>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn-danger" style="width:100%" onclick="logout()">Logout</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-header">
+        <h1>Attendance Report</h1>
+        <p>View and export attendance records</p>
+      </div>
+
+      <div class="table-card" style="margin-bottom:1rem">
+        <div class="table-toolbar">
+          <div style="display:flex;gap:0.5rem;align-items:center">
+            <label style="font-size:0.9rem;color:#4a5568">Date:</label>
+            <input type="date" id="report-date" style="padding:0.4rem 0.8rem;border:1.5px solid #e2e8f0;border-radius:8px;font-size:0.9rem">
+            <button class="btn-secondary" onclick="loadReport()">View</button>
+          </div>
+          <button class="btn-success" onclick="exportCSV()">Export CSV</button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card green">
+          <div class="number" id="r-present">0</div>
+          <div class="label">Present</div>
+        </div>
+        <div class="stat-card red">
+          <div class="number" id="r-absent">0</div>
+          <div class="label">Absent</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="number" id="r-late">0</div>
+          <div class="label">Late</div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-toolbar"><h3>Report Details</h3></div>
+        <table class="attendance-table">
+          <thead>
+            <tr><th>Roll No</th><th>Name</th><th>Status</th></tr>
+          </thead>
+          <tbody id="report-tbody">
+            <tr><td colspan="3" style="text-align:center;padding:2rem;color:#718096">Select a date to view report</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    if (!localStorage.getItem('loggedIn')) window.location.href = 'index.html';
+    document.getElementById('admin-name').textContent = localStorage.getItem('username') || 'Admin';
+
+    const today = new Date();
+    document.getElementById('report-date').value = today.toISOString().split('T')[0];
+
+    // Load students dynamically from localStorage (same source as dashboard)
+    let students = JSON.parse(localStorage.getItem('students_list') || 'null');
+    if (!students) {
+      students = [
+        { id: 1, roll: 'R001', name: 'Aarav Sharma',  email: 'aarav@email.com',  cls: 'CS-A' },
+        { id: 2, roll: 'R002', name: 'Priya Patel',   email: 'priya@email.com',  cls: 'CS-A' },
+        { id: 3, roll: 'R003', name: 'Rohan Mehta',   email: 'rohan@email.com',  cls: 'CS-A' },
+        { id: 4, roll: 'R004', name: 'Sneha Reddy',   email: 'sneha@email.com',  cls: 'CS-A' },
+        { id: 5, roll: 'R005', name: 'Karan Singh',   email: 'karan@email.com',  cls: 'CS-A' },
+      ];
+      localStorage.setItem('students_list', JSON.stringify(students));
+    }
+
+    function loadReport() {
+      const dateVal = document.getElementById('report-date').value;
+      const dateObj = new Date(dateVal);
+      const key = 'attendance_' + dateObj.toDateString();
+      const saved = JSON.parse(localStorage.getItem(key) || '{}');
+
+      let present = 0, absent = 0, late = 0;
+      const tbody = document.getElementById('report-tbody');
+
+      if (Object.keys(saved).length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:2rem;color:#718096">No attendance found for this date</td></tr>';
+        document.getElementById('r-present').textContent = 0;
+        document.getElementById('r-absent').textContent = 0;
+        document.getElementById('r-late').textContent = 0;
+        return;
+      }
+
+      tbody.innerHTML = students.map(s => {
+        const status = saved[s.id] || 'Absent';
+        if (status === 'Present') present++;
+        else if (status === 'Absent') absent++;
+        else if (status === 'Late') late++;
+        const badgeClass = status === 'Present' ? 'badge-present' : status === 'Absent' ? 'badge-absent' : 'badge-late';
+        return `<tr><td>${s.roll}</td><td>${s.name}</td><td><span class="badge ${badgeClass}">${status}</span></td></tr>`;
+      }).join('');
+
+      document.getElementById('r-present').textContent = present;
+      document.getElementById('r-absent').textContent = absent;
+      document.getElementById('r-late').textContent = late;
+    }
+
+    function exportCSV() {
+      const dateVal = document.getElementById('report-date').value;
+      const dateObj = new Date(dateVal);
+      const saved = JSON.parse(localStorage.getItem('attendance_' + dateObj.toDateString()) || '{}');
+
+      let csv = 'Roll No,Name,Status\n';
+      students.forEach(s => {
+        csv += `${s.roll},${s.name},${saved[s.id] || 'Absent'}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'attendance_' + dateVal + '.csv';
+      a.click();
+    }
+
+    function logout() {
+      localStorage.removeItem('loggedIn');
+      window.location.href = 'index.html';
+    }
+
+    loadReport();
+  </script>
+</body>
+</html>
